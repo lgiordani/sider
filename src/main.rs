@@ -1,30 +1,36 @@
-use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::{TcpListener, TcpStream},
+};
 
-fn main() {
-    let listener = TcpListener::bind("127.0.0.1:6379").unwrap();
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    let listener = TcpListener::bind("127.0.0.1:6379").await?;
 
-    for stream in listener.incoming() {
-        match stream {
-            Ok(mut stream) => {
-                handle_connection(&mut stream);
+    loop {
+        match listener.accept().await {
+            Ok((stream, _)) => {
+                tokio::spawn(handle_connection(stream));
             }
             Err(e) => {
-                println!("error: {}", e);
+                println!("Error: {}", e);
+                continue;
             }
         }
     }
 }
 
-fn handle_connection(stream: &mut TcpStream) {
+async fn handle_connection(mut stream: TcpStream) {
     let mut buffer = [0; 512];
 
     loop {
-        match stream.read(&mut buffer) {
+        match stream.read(&mut buffer).await {
             Ok(size) if size != 0 => {
                 let response = "+PONG\r\n";
-                stream.write(response.as_bytes()).unwrap();
-                stream.flush().unwrap();
+
+                if let Err(e) = stream.write_all(response.as_bytes()).await {
+                    eprintln!("Error writing to socket: {}", e);
+                }
             }
             Ok(_) => {
                 println!("Connection closed");
