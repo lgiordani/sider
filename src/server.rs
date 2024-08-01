@@ -1,23 +1,7 @@
 use crate::storage::Storage;
 use crate::storage_result::{StorageError, StorageResult};
 use crate::RESP;
-use std::fmt;
 use std::sync::{Arc, Mutex};
-
-#[derive(Debug, PartialEq)]
-pub enum ServerError {
-    CommandError,
-}
-
-impl fmt::Display for ServerError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ServerError::CommandError => write!(f, "Error while processing!"),
-        }
-    }
-}
-
-pub type ServerResult<T> = Result<T, ServerError>;
 
 pub fn process_request(request: RESP, storage: Arc<Mutex<Storage>>) -> StorageResult<RESP> {
     let elements = match request {
