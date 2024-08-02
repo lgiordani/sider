@@ -1,6 +1,7 @@
 use crate::connection::ConnectionError;
 use crate::request::Request;
 use crate::resp::{bytes_to_resp, RESP};
+use crate::server_result::ServerValue;
 use crate::storage::Storage;
 use connection::ConnectionMessage;
 use server::{run_server, Server};
@@ -97,7 +98,7 @@ async fn handle_connection(mut stream: TcpStream, server_sender: mpsc::Sender<Co
 
             Some(response) = connection_receiver.recv() => {
                 let _ = match response {
-                    ServerMessage::Data(v) => stream.write_all(v.to_string().as_bytes()).await,
+                    ServerMessage::Data(ServerValue::RESP(v)) => stream.write_all(v.to_string().as_bytes()).await,
                     ServerMessage::Error(e) => {
                         eprintln!("Error: {}", ConnectionError::ServerError(e));
                         return;

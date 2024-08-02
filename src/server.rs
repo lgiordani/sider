@@ -1,6 +1,6 @@
 use crate::connection::ConnectionMessage;
 use crate::request::Request;
-use crate::server_result::ServerMessage;
+use crate::server_result::{ServerMessage, ServerValue};
 use crate::storage::Storage;
 use crate::RESP;
 use std::time::Duration;
@@ -77,7 +77,11 @@ pub async fn process_request(request: Request, server: &mut Server) {
 
     match response {
         Ok(v) => {
-            request.sender.send(ServerMessage::Data(v)).await.unwrap();
+            request
+                .sender
+                .send(ServerMessage::Data(ServerValue::RESP(v)))
+                .await
+                .unwrap();
         }
         Err(_e) => (),
     }
