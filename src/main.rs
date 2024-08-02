@@ -5,7 +5,6 @@ use crate::storage::Storage;
 use connection::ConnectionMessage;
 use server::{run_server, Server};
 use server_result::ServerMessage;
-use std::sync::{Arc, Mutex};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
@@ -108,10 +107,4 @@ async fn handle_connection(mut stream: TcpStream, server_sender: mpsc::Sender<Co
 
         }
     }
-}
-
-async fn expire_keys(storage: Arc<Mutex<Storage>>) {
-    let mut guard = storage.lock().unwrap();
-
-    guard.expire_keys();
 }

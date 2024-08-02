@@ -3,6 +3,7 @@ use crate::request::Request;
 use crate::server_result::ServerMessage;
 use crate::storage::Storage;
 use crate::RESP;
+use std::time::Duration;
 use tokio::sync::mpsc;
 
 pub struct Server {
@@ -17,9 +18,20 @@ impl Server {
     pub fn set_storage(&mut self, storage: Storage) {
         self.storage = Some(storage);
     }
+
+    pub fn expire_keys(&mut self) {
+        let storage = match self.storage.as_mut() {
+            Some(storage) => storage,
+            None => return,
+        };
+
+        storage.expire_keys();
+    }
 }
 
 pub async fn run_server(mut server: Server, mut crx: mpsc::Receiver<ConnectionMessage>) {
+    let mut interval_timer = tokio::time::interval(Duration::from_millis(10));
+
     loop {
         tokio::select! {
             Some(message) = crx.recv() => {
@@ -28,6 +40,10 @@ pub async fn run_server(mut server: Server, mut crx: mpsc::Receiver<ConnectionMe
                         process_request(request, &mut server).await;
                     }
                 }
+            }
+
+            _ = interval_timer.tick() => {
+                server.expire_keys();
             }
         }
     }
