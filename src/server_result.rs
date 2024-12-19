@@ -14,10 +14,15 @@ impl fmt::Display for ServerError {
     }
 }
 
-pub type ServerResult<T> = Result<T, ServerError>;
+#[derive(Debug)]
+pub enum ServerValue {
+    RESP(RESP),
+}
+
+pub type ServerResult = Result<ServerValue, ServerError>;
 
 #[derive(Debug)]
 pub enum ServerMessage {
-    Data(RESP),
+    Data(ServerValue),
     Error(ServerError),
 }
