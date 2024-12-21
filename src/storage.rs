@@ -89,7 +89,7 @@ impl Storage {
         }
     }
 
-    fn set(&mut self, key: String, value: String, args: SetArgs) -> StorageResult<String> {
+    pub fn set(&mut self, key: String, value: String, args: SetArgs) -> StorageResult<String> {
         let mut data = StorageData::from(value);
 
         if let Some(value) = args.expiry {
@@ -108,7 +108,7 @@ impl Storage {
         Ok(String::from("OK"))
     }
 
-    fn get(&mut self, key: String) -> StorageResult<Option<String>> {
+    pub fn get(&mut self, key: String) -> StorageResult<Option<String>> {
         if let Some(&expiry) = self.expiry.get(&key) {
             if SystemTime::now() >= expiry {
                 self.expiry.remove(&key);
