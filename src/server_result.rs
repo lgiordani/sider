@@ -3,7 +3,6 @@ use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub enum ServerError {
-    CommandError,
     IncorrectData,
     StorageNotInitialised,
 }
@@ -11,7 +10,6 @@ pub enum ServerError {
 impl fmt::Display for ServerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ServerError::CommandError => write!(f, "Error while processing!"),
             ServerError::IncorrectData => {
                 write!(f, "Data received from stream is incorrect.")
             }
@@ -27,7 +25,7 @@ pub enum ServerValue {
     RESP(RESP),
 }
 
-pub type ServerResult = Result<ServerValue, ServerError>;
+pub type _ServerResult = Result<ServerValue, ServerError>;
 
 #[derive(Debug, PartialEq)]
 pub enum ServerMessage {

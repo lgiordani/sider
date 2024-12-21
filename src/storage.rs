@@ -100,7 +100,7 @@ impl Storage {
 
             data.add_expiry(expiry);
             self.expiry
-                .insert(key.clone(), SystemTime::now().add(expiry));
+                .insert(key.clone(), data.creation_time.add(expiry));
         }
 
         self.store.insert(key.clone(), data);
