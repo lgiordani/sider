@@ -1,5 +1,6 @@
 use crate::commands::{echo, get, ping, set};
 use crate::connection::ConnectionMessage;
+use crate::replication::ReplicationConfig;
 use crate::request::Request;
 use crate::server_result::ServerError;
 use crate::storage::Storage;
@@ -9,15 +10,23 @@ use tokio::sync::mpsc;
 
 pub struct Server {
     pub storage: Option<Storage>,
+    pub replication: ReplicationConfig,
 }
 
 impl Server {
     pub fn new() -> Self {
-        Self { storage: None }
+        Self {
+            storage: None,
+            replication: ReplicationConfig::new_master(),
+        }
     }
 
     pub fn set_storage(&mut self, storage: Storage) {
         self.storage = Some(storage);
+    }
+
+    pub fn set_replication(&mut self, config: ReplicationConfig) {
+        self.replication = config;
     }
 
     pub fn expire_keys(&mut self) {

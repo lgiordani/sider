@@ -1,3 +1,4 @@
+use crate::replication::ReplicationConfig;
 use crate::resp::RESP;
 use crate::storage::Storage;
 use clap::Parser;
@@ -8,6 +9,7 @@ use tokio::sync::mpsc;
 mod commands;
 
 mod connection;
+mod replication;
 mod request;
 mod resp;
 mod resp_result;
@@ -33,11 +35,14 @@ struct Args {
 async fn main() -> std::io::Result<()> {
     let args = Args::parse();
 
+    let replication_config = ReplicationConfig::new_master();
+
     let mut storage = Storage::new();
     storage.set_active_expiry(true);
 
     let mut server = Server::new();
     server.set_storage(storage);
+    server.set_replication(replication_config);
 
     let (server_sender, server_receiver) = mpsc::channel::<ConnectionMessage>(32);
 
