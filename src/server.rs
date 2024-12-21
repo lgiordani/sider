@@ -1,4 +1,4 @@
-use crate::commands::{echo, get, ping, set};
+use crate::commands::{echo, get, info, ping, set};
 use crate::connection::ConnectionMessage;
 use crate::replication::ReplicationConfig;
 use crate::request::Request;
@@ -87,6 +87,9 @@ pub async fn process_request(request: Request, server: &mut Server) {
         }
         "get" => {
             get::command(server, &request, &command).await;
+        }
+        "info" => {
+            info::command(server, &request, &command).await;
         }
         "ping" => {
             ping::command(server, &request, &command).await;
