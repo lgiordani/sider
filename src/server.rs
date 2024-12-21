@@ -91,7 +91,6 @@ pub async fn process_request(request: Request, server: &mut Server) {
 mod tests {
     use super::*;
     use crate::server_result::ServerMessage;
-    use tokio::sync::mpsc;
 
     #[test]
     fn test_create_new() {
@@ -116,70 +115,94 @@ mod tests {
         };
     }
 
-    // #[test]
-    // fn test_process_request_ping() {
-    //     let (connection_sender, _) = mpsc::channel::<ServerMessage>(32);
+    #[tokio::test]
+    async fn test_process_request_ping() {
+        let (connection_sender, mut connection_receiver) = mpsc::channel::<ServerMessage>(32);
 
-    //     let request = Request {
-    //         value: RESP::Array(vec![RESP::BulkString(String::from("PING"))]),
-    //         sender: connection_sender,
-    //     };
+        let request = Request {
+            value: RESP::Array(vec![RESP::BulkString(String::from("PING"))]),
+            sender: connection_sender,
+        };
 
-    //     let storage = Arc::new(Mutex::new(Storage::new()));
+        let storage = Storage::new();
 
-    //     let output = process_request(request, storage).unwrap();
+        let mut server: Server = Server::new();
+        server.set_storage(storage);
 
-    //     assert_eq!(output, RESP::SimpleString(String::from("PONG")));
-    // }
+        process_request(request, &mut server).await;
 
-    // #[test]
-    // fn test_process_request_echo() {
-    //     let (connection_sender, _) = mpsc::channel::<ServerMessage>(32);
+        assert_eq!(
+            connection_receiver.try_recv().unwrap(),
+            ServerMessage::Data(ServerValue::RESP(RESP::SimpleString(String::from("PONG"))))
+        );
+    }
 
-    //     let request = Request {
-    //         value: RESP::Array(vec![
-    //             RESP::BulkString(String::from("ECHO")),
-    //             RESP::BulkString(String::from("42")),
-    //         ]),
-    //         sender: connection_sender,
-    //     };
+    #[tokio::test]
+    async fn test_process_request_echo() {
+        let (connection_sender, mut connection_receiver) = mpsc::channel::<ServerMessage>(32);
 
-    //     let storage = Arc::new(Mutex::new(Storage::new()));
+        let request = Request {
+            value: RESP::Array(vec![
+                RESP::BulkString(String::from("ECHO")),
+                RESP::BulkString(String::from("42")),
+            ]),
+            sender: connection_sender,
+        };
 
-    //     let output = process_request(request, storage).unwrap();
+        let storage = Storage::new();
 
-    //     assert_eq!(output, RESP::BulkString(String::from("42")));
-    // }
+        let mut server: Server = Server::new();
+        server.set_storage(storage);
 
-    // #[test]
-    // fn test_process_request_not_array() {
-    //     let (connection_sender, _) = mpsc::channel::<ServerMessage>(32);
+        process_request(request, &mut server).await;
 
-    //     let request = Request {
-    //         value: RESP::BulkString(String::from("PING")),
-    //         sender: connection_sender,
-    //     };
+        assert_eq!(
+            connection_receiver.try_recv().unwrap(),
+            ServerMessage::Data(ServerValue::RESP(RESP::BulkString(String::from("42"))))
+        );
+    }
 
-    //     let storage = Arc::new(Mutex::new(Storage::new()));
+    #[tokio::test]
+    async fn test_process_request_not_array() {
+        let (connection_sender, mut connection_receiver) = mpsc::channel::<ServerMessage>(32);
 
-    //     let error = process_request(request, storage).unwrap_err();
+        let request = Request {
+            value: RESP::BulkString(String::from("PING")),
+            sender: connection_sender,
+        };
 
-    //     assert_eq!(error, StorageError::IncorrectRequest);
-    // }
+        let storage = Storage::new();
 
-    // #[test]
-    // fn test_process_request_not_bulkstrings() {
-    //     let (connection_sender, _) = mpsc::channel::<ServerMessage>(32);
+        let mut server: Server = Server::new();
+        server.set_storage(storage);
 
-    //     let request = Request {
-    //         value: RESP::Array(vec![RESP::SimpleString(String::from("PING"))]),
-    //         sender: connection_sender,
-    //     };
+        process_request(request, &mut server).await;
 
-    //     let storage = Arc::new(Mutex::new(Storage::new()));
+        assert_eq!(
+            connection_receiver.try_recv().unwrap(),
+            ServerMessage::Error(ServerError::IncorrectData)
+        );
+    }
 
-    //     let error = process_request(request, storage).unwrap_err();
+    #[tokio::test]
+    async fn test_process_request_not_bulkstrings() {
+        let (connection_sender, mut connection_receiver) = mpsc::channel::<ServerMessage>(32);
 
-    //     assert_eq!(error, StorageError::IncorrectRequest);
-    // }
+        let request = Request {
+            value: RESP::Array(vec![RESP::SimpleString(String::from("PING"))]),
+            sender: connection_sender,
+        };
+
+        let storage = Storage::new();
+
+        let mut server: Server = Server::new();
+        server.set_storage(storage);
+
+        process_request(request, &mut server).await;
+
+        assert_eq!(
+            connection_receiver.try_recv().unwrap(),
+            ServerMessage::Error(ServerError::IncorrectData)
+        );
+    }
 }
