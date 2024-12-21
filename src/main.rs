@@ -4,6 +4,8 @@ use connection::{run_listener, ConnectionMessage};
 use server::{run_server, Server};
 use tokio::sync::mpsc;
 
+mod commands;
+
 mod connection;
 mod request;
 mod resp;
