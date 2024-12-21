@@ -1,5 +1,6 @@
 use crate::resp::RESP;
 use crate::storage::Storage;
+use clap::Parser;
 use connection::{run_listener, ConnectionMessage};
 use server::{run_server, Server};
 use tokio::sync::mpsc;
@@ -16,8 +17,22 @@ mod set;
 mod storage;
 mod storage_result;
 
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    #[arg(
+        short,
+        long,
+        help = "The TCP port to use for the server",
+        default_value_t = 6379
+    )]
+    port: u16,
+}
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    let args = Args::parse();
+
     let mut storage = Storage::new();
     storage.set_active_expiry(true);
 
@@ -28,7 +43,7 @@ async fn main() -> std::io::Result<()> {
 
     tokio::spawn(run_server(server, server_receiver));
 
-    run_listener("127.0.0.1".to_string(), 6379, server_sender).await;
+    run_listener("127.0.0.1".to_string(), args.port, server_sender).await;
 
     Ok(())
 }
