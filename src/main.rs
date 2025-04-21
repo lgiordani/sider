@@ -1,12 +1,15 @@
+use crate::request::Request;
 use crate::resp::{bytes_to_resp, RESP};
 use crate::server::process_request;
 use crate::storage::Storage;
+use server_result::ServerMessage;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
     select,
+    sync::mpsc,
 };
 
 mod connection;
@@ -51,6 +54,8 @@ async fn main() -> std::io::Result<()> {
 async fn handle_connection(mut stream: TcpStream, storage: Arc<Mutex<Storage>>) {
     let mut buffer = [0; 512];
 
+    let (connection_sender, _) = mpsc::channel::<ServerMessage>(32);
+
     loop {
         select! {
             result = stream.read(&mut buffer) => {
@@ -58,12 +63,17 @@ async fn handle_connection(mut stream: TcpStream, storage: Arc<Mutex<Storage>>) 
                     Ok(size) if size != 0 => {
                         let mut index: usize = 0;
 
-                        let request = match bytes_to_resp(&buffer[..size].to_vec(), &mut index) {
+                        let resp = match bytes_to_resp(&buffer[..size].to_vec(), &mut index) {
                             Ok(v) => v,
                             Err(e) => {
                                 eprintln!("Error: {}", e);
                                 return;
                             }
+                        };
+
+                        let request = Request {
+                            value: resp,
+                            sender: connection_sender.clone(),
                         };
 
                         let response = match process_request(request, storage.clone()) {
