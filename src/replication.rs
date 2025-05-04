@@ -16,7 +16,7 @@ pub struct ReplicationInfo {
     pub master_repl_offset: usize,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct MasterConfig {
     pub host: String,
     pub port: u16,

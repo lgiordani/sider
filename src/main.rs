@@ -2,7 +2,7 @@ use crate::replication::ReplicationConfig;
 use crate::resp::RESP;
 use crate::storage::Storage;
 use clap::Parser;
-use connection::{run_listener, ConnectionMessage};
+use connection::{run_listener, run_master_listener, ConnectionMessage};
 use server::{run_server, Server};
 use tokio::sync::mpsc;
 
@@ -73,6 +73,15 @@ async fn main() -> std::io::Result<()> {
     server.set_replication(replication_config);
 
     let (server_sender, server_receiver) = mpsc::channel::<ConnectionMessage>(32);
+
+    if let Some(master_config) = server.replication.master.clone() {
+        run_master_listener(
+            master_config.host.clone(),
+            master_config.port,
+            server_sender.clone(),
+        )
+        .await;
+    }
 
     tokio::spawn(run_server(server, server_receiver));
 
