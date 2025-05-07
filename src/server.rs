@@ -2,7 +2,7 @@ use crate::commands::{echo, get, info, ping, set};
 use crate::connection::ConnectionMessage;
 use crate::replication::ReplicationConfig;
 use crate::request::Request;
-use crate::server_result::ServerError;
+use crate::server_result::{ServerError, ServerResult, ServerValue};
 use crate::storage::Storage;
 use crate::RESP;
 use std::time::Duration;
@@ -103,6 +103,10 @@ pub async fn process_request(request: Request, server: &mut Server) {
                 .await;
         }
     }
+}
+
+pub async fn handshake() -> ServerResult {
+    Ok(ServerValue::None)
 }
 
 #[cfg(test)]
