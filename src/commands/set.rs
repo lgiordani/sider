@@ -54,7 +54,8 @@ mod tests {
     #[tokio::test]
     async fn test_command() {
         let storage = Storage::new();
-        let mut server: Server = Server::new();
+        let mut server: Server = Server::new("localhost".to_string(), 6379);
+
         server.set_storage(storage);
 
         let cmd = vec![
@@ -80,7 +81,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_storage_not_initialised() {
-        let mut server: Server = Server::new();
+        let mut server: Server = Server::new("localhost".to_string(), 6379);
 
         let cmd = vec![
             String::from("set"),
@@ -106,7 +107,8 @@ mod tests {
     #[tokio::test]
     async fn test_wrong_syntax() {
         let storage = Storage::new();
-        let mut server: Server = Server::new();
+        let mut server: Server = Server::new("localhost".to_string(), 6379);
+
         server.set_storage(storage);
 
         let cmd = vec![String::from("set"), String::from("key")];

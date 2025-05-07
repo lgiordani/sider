@@ -40,6 +40,7 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    let hostname = "127.0.0.1";
     let args = Args::parse();
 
     let replication_config = match args.replicaof {
@@ -68,7 +69,8 @@ async fn main() -> std::io::Result<()> {
     let mut storage = Storage::new();
     storage.set_active_expiry(true);
 
-    let mut server = Server::new();
+    let mut server = Server::new(hostname.to_string(), args.port);
+
     server.set_storage(storage);
     server.set_replication(replication_config);
 
@@ -85,7 +87,7 @@ async fn main() -> std::io::Result<()> {
 
     tokio::spawn(run_server(server, server_receiver));
 
-    run_listener("127.0.0.1".to_string(), args.port, server_sender).await;
+    run_listener(hostname.to_string(), args.port, server_sender).await;
 
     Ok(())
 }

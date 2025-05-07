@@ -18,7 +18,7 @@ mod tests {
     #[tokio::test]
     async fn test_command_ping() {
         let cmd = vec![String::from("ping")];
-        let server = Server::new();
+        let server = Server::new("localhost".to_string(), 6379);
         let (connection_sender, mut connection_receiver) = mpsc::channel::<ServerMessage>(32);
 
         let request = Request {
@@ -37,7 +37,7 @@ mod tests {
     #[tokio::test]
     async fn test_command_ping_uppercase() {
         let cmd = vec![String::from("PING")];
-        let server = Server::new();
+        let server = Server::new("localhost".to_string(), 6379);
         let (connection_sender, mut connection_receiver) = mpsc::channel::<ServerMessage>(32);
 
         let request = Request {
