@@ -2,11 +2,16 @@ use crate::commands::{echo, get, info, ping, set};
 use crate::connection::ConnectionMessage;
 use crate::replication::ReplicationConfig;
 use crate::request::Request;
+use crate::resp::bytes_to_resp;
 use crate::server_result::{ServerError, ServerResult, ServerValue};
 use crate::storage::Storage;
 use crate::RESP;
 use std::time::Duration;
 use tokio::sync::mpsc;
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpStream,
+};
 
 pub struct Server {
     pub storage: Option<Storage>,
@@ -105,7 +110,55 @@ pub async fn process_request(request: Request, server: &mut Server) {
     }
 }
 
-pub async fn handshake() -> ServerResult {
+pub async fn handshake(stream: &mut TcpStream) -> ServerResult {
+    let ping = RESP::Array(vec![RESP::SimpleString(String::from("PING"))]);
+
+    stream
+        .write_all(ping.to_string().as_bytes())
+        .await
+        .map_err(|e| {
+            ServerError::HandshakeFailed(format!(
+                "Sending {} - Cannot write to stream: {}",
+                ping.to_string(),
+                e.to_string()
+            ))
+        })?;
+
+    let mut buffer = [0; 512];
+
+    let size = stream.read(&mut buffer).await.map_err(|e| {
+        ServerError::HandshakeFailed(format!(
+            "Sending {} - Cannot read from stream: {}",
+            ping.to_string(),
+            e.to_string()
+        ))
+    })?;
+
+    if size == 0 {
+        return Err(ServerError::HandshakeFailed(format!(
+            "Sending {} - Connection terminated",
+            ping.to_string()
+        )));
+    }
+
+    let mut index: usize = 0;
+
+    let resp = bytes_to_resp(&buffer, &mut index).map_err(|e| {
+        ServerError::HandshakeFailed(format!(
+            "Sending {} - Cannot convert binary to RESP: {}",
+            ping.to_string(),
+            e.to_string()
+        ))
+    })?;
+
+    if resp != RESP::SimpleString(String::from("PONG")) {
+        return Err(ServerError::HandshakeFailed(format!(
+            "Sending {} - Wrong server answer: {}",
+            ping.to_string(),
+            resp.to_string()
+        )));
+    };
+
     Ok(ServerValue::None)
 }
 

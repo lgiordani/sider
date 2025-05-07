@@ -58,12 +58,12 @@ pub async fn run_master_listener(
     server_sender: mpsc::Sender<ConnectionMessage>,
 ) {
     // Actively connect to the master
-    let stream = TcpStream::connect(format!("{}:{}", host, port))
+    let mut stream = TcpStream::connect(format!("{}:{}", host, port))
         .await
         .unwrap();
 
     // Run the handshake protocol
-    if let Err(e) = handshake().await {
+    if let Err(e) = handshake(&mut stream).await {
         eprintln!("Handshake failed: {}", e.to_string());
         std::process::exit(1);
     }

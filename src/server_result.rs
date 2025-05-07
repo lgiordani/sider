@@ -6,6 +6,7 @@ pub enum ServerError {
     CommandInternalError(String),
     CommandNotAvailable(String),
     CommandSyntaxError(String),
+    HandshakeFailed(String),
     IncorrectData,
     StorageNotInitialised,
 }
@@ -23,6 +24,10 @@ impl fmt::Display for ServerError {
 
             ServerError::CommandSyntaxError(string) => {
                 write!(f, "Syntax error while processing {}.", string)
+            }
+
+            ServerError::HandshakeFailed(string) => {
+                write!(f, "Handshake process failed: {}.", string)
             }
 
             ServerError::IncorrectData => {
