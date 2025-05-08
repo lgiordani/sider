@@ -1,5 +1,5 @@
 use crate::resp::bytes_to_resp;
-use crate::server::handshake;
+use crate::server::{handshake, ServerInfo};
 use crate::server_result::{ServerMessage, ServerValue};
 use crate::{request::Request, server_result::ServerError};
 use std::fmt;
@@ -55,6 +55,7 @@ pub async fn run_listener(host: String, port: u16, server_sender: mpsc::Sender<C
 pub async fn run_master_listener(
     host: String,
     port: u16,
+    info: &ServerInfo,
     server_sender: mpsc::Sender<ConnectionMessage>,
 ) {
     // Actively connect to the master
@@ -63,7 +64,7 @@ pub async fn run_master_listener(
         .unwrap();
 
     // Run the handshake protocol
-    if let Err(e) = handshake(&mut stream).await {
+    if let Err(e) = handshake(&mut stream, info).await {
         eprintln!("Handshake failed: {}", e.to_string());
         std::process::exit(1);
     }

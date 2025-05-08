@@ -120,7 +120,7 @@ pub async fn process_request(request: Request, server: &mut Server) {
     }
 }
 
-pub async fn handshake(stream: &mut TcpStream) -> ServerResult {
+pub async fn handshake(stream: &mut TcpStream, info: &ServerInfo) -> ServerResult {
     let ping = RESP::Array(vec![RESP::SimpleString(String::from("PING"))]);
 
     stream
@@ -165,6 +165,58 @@ pub async fn handshake(stream: &mut TcpStream) -> ServerResult {
         return Err(ServerError::HandshakeFailed(format!(
             "Sending {} - Wrong server answer: {}",
             ping.to_string(),
+            resp.to_string()
+        )));
+    };
+
+    let replconf = RESP::Array(vec![
+        RESP::SimpleString(String::from("REPLCONF")),
+        RESP::SimpleString(String::from("listening-port")),
+        RESP::SimpleString(info.port.to_string()),
+    ]);
+
+    stream
+        .write_all(replconf.to_string().as_bytes())
+        .await
+        .map_err(|e| {
+            ServerError::HandshakeFailed(format!(
+                "Sending {} - Cannot write to stream: {}",
+                replconf.to_string(),
+                e.to_string()
+            ))
+        })?;
+
+    let mut buffer = [0; 512];
+
+    let size = stream.read(&mut buffer).await.map_err(|e| {
+        ServerError::HandshakeFailed(format!(
+            "Sending {} - Cannot read from stream: {}",
+            replconf.to_string(),
+            e.to_string()
+        ))
+    })?;
+
+    if size == 0 {
+        return Err(ServerError::HandshakeFailed(format!(
+            "Sending {} - Connection terminated",
+            replconf.to_string()
+        )));
+    }
+
+    let mut index: usize = 0;
+
+    let resp = bytes_to_resp(&buffer, &mut index).map_err(|e| {
+        ServerError::HandshakeFailed(format!(
+            "Sending {} - Cannot convert binary to RESP: {}",
+            replconf.to_string(),
+            e.to_string()
+        ))
+    })?;
+
+    if resp != RESP::SimpleString(String::from("OK")) {
+        return Err(ServerError::HandshakeFailed(format!(
+            "Sending {} - Wrong server answer: {}",
+            replconf.to_string(),
             resp.to_string()
         )));
     };
