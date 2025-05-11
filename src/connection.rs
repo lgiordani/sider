@@ -12,15 +12,23 @@ use tokio::{
 
 #[derive(Debug)]
 pub enum ConnectionError {
+    CannotReadFromStream(String),
     CannotWriteToStream(String),
+    MalformedRESP(String),
     ServerError(ServerError),
 }
 
 impl fmt::Display for ConnectionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            ConnectionError::CannotReadFromStream(string) => {
+                write!(f, "Cannot read from stream: {}.", string)
+            }
             ConnectionError::CannotWriteToStream(string) => {
                 write!(f, "Cannot write to stream: {}.", string)
+            }
+            ConnectionError::MalformedRESP(string) => {
+                write!(f, "Cannot convert bytes to RESP: {}.", string)
             }
             ConnectionError::ServerError(e) => {
                 write!(f, "{}", format!("Server error: {}", e))
@@ -149,4 +157,16 @@ pub async fn stream_write_resp(stream: &mut TcpStream, data: &RESP) -> Connectio
         Ok(_) => Ok(bytes.len()),
         Err(e) => Err(ConnectionError::CannotWriteToStream(e.to_string())),
     }
+}
+
+// Read RESP data from the stream
+async fn stream_read_resp(stream: &mut TcpStream, buffer: &mut [u8]) -> ConnectionResult<RESP> {
+    match stream.read(buffer).await {
+        Ok(size) => Ok(size),
+        Err(e) => Err(ConnectionError::CannotReadFromStream(e.to_string())),
+    }?;
+
+    let mut index: usize = 0;
+
+    bytes_to_resp(&buffer, &mut index).map_err(|e| ConnectionError::MalformedRESP(e.to_string()))
 }
