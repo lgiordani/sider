@@ -273,6 +273,23 @@ pub async fn handshake(stream: &mut TcpStream, info: &ServerInfo) -> ServerResul
         )));
     };
 
+    let psync = RESP::Array(vec![
+        RESP::SimpleString(String::from("PSYNC")),
+        RESP::SimpleString(String::from("?")),
+        RESP::SimpleString(String::from("-1")),
+    ]);
+
+    stream
+        .write_all(psync.to_string().as_bytes())
+        .await
+        .map_err(|e| {
+            ServerError::HandshakeFailed(format!(
+                "Sending {} - Cannot write to stream: {}",
+                replconf.to_string(),
+                e.to_string()
+            ))
+        })?;
+
     Ok(ServerValue::None)
 }
 
