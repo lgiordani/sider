@@ -1,4 +1,4 @@
-use crate::resp::bytes_to_resp;
+use crate::resp::{bytes_to_resp, RESP};
 use crate::server::{handshake, ServerInfo};
 use crate::server_result::{ServerMessage, ServerValue};
 use crate::{request::Request, server_result::ServerError};
@@ -12,18 +12,24 @@ use tokio::{
 
 #[derive(Debug)]
 pub enum ConnectionError {
+    CannotWriteToStream(String),
     ServerError(ServerError),
 }
 
 impl fmt::Display for ConnectionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            ConnectionError::CannotWriteToStream(string) => {
+                write!(f, "Cannot write to stream: {}.", string)
+            }
             ConnectionError::ServerError(e) => {
                 write!(f, "{}", format!("Server error: {}", e))
             }
         }
     }
 }
+
+type ConnectionResult<T> = Result<T, ConnectionError>;
 
 #[derive(Debug)]
 pub enum ConnectionMessage {
@@ -131,5 +137,16 @@ pub async fn handle_connection(
             }
 
         }
+    }
+}
+
+// Write RESP data to the stream
+pub async fn stream_write_resp(stream: &mut TcpStream, data: &RESP) -> ConnectionResult<usize> {
+    let string_data = data.to_string();
+    let bytes = string_data.as_bytes();
+
+    match stream.write_all(bytes).await {
+        Ok(_) => Ok(bytes.len()),
+        Err(e) => Err(ConnectionError::CannotWriteToStream(e.to_string())),
     }
 }
