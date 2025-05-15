@@ -45,6 +45,7 @@ impl fmt::Display for ServerError {
 pub enum ServerValue {
     None,
     RESP(RESP),
+    Binary(Vec<u8>),
 }
 
 pub type ServerResult = Result<ServerValue, ServerError>;

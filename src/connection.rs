@@ -141,6 +141,7 @@ pub async fn handle_connection(
                 let _ = match response {
                     ServerMessage::Data(ServerValue::RESP(v)) => stream.write_all(v.to_string().as_bytes()).await,
                     ServerMessage::Data(ServerValue::None) => Ok(()),
+                    ServerMessage::Data(ServerValue::Binary(data)) => stream.write_all(&data).await,
                     ServerMessage::Error(e) => {
                         eprintln!("Error: {}", ConnectionError::ServerError(e));
                         return;

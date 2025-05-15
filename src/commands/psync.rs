@@ -13,6 +13,12 @@ pub async fn command(server: &mut Server, request: &Request, _command: &Vec<Stri
     )));
 
     request.data(resp).await;
+
+    let rdb = server.generate_rdb();
+    let rdb_len = RESP::RDBPrefix(rdb.len());
+
+    request.data(ServerValue::RESP(rdb_len)).await;
+    request.data(ServerValue::Binary(rdb)).await;
 }
 
 #[cfg(test)]
