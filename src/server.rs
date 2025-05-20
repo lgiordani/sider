@@ -1,4 +1,4 @@
-use crate::commands::{echo, get, info, ping, replconf, set};
+use crate::commands::{echo, get, info, ping, psync, replconf, set};
 use crate::connection::{stream_send_receive_resp, ConnectionMessage};
 use crate::replication::ReplicationConfig;
 use crate::request::Request;
@@ -108,6 +108,9 @@ pub async fn process_request(request: Request, server: &mut Server) {
         }
         "ping" => {
             ping::command(server, &request, &command).await;
+        }
+        "psync" => {
+            psync::command(server, &request, &command).await;
         }
         "replconf" => {
             replconf::command(server, &request, &command).await;
